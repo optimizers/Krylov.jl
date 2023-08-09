@@ -1,6 +1,11 @@
 module Krylov
 
 using LinearAlgebra, SparseArrays, Printf
+using PackageExtensionCompat
+
+function __init__()
+    @require_extensions
+end
 
 include("krylov_utils.jl")
 include("krylov_stats.jl")
@@ -52,4 +57,5 @@ include("craig.jl")
 include("craigmr.jl")
 
 include("krylov_solve.jl")
+
 end
