@@ -15,3 +15,10 @@ tricg!
 trimr
 trimr!
 ```
+
+## USYMLQR
+
+```@docs
+usymlqr!
+usymlqr
+```

@@ -16,7 +16,7 @@
             x, _ = @eval $fn($A, $b, $c)
           elseif fn in (:trilqr, :bilqr)
             x, t, _ = @eval $fn($A, $b, $c)
-          elseif fn in (:tricg, :trimr)
+          elseif fn in (:tricg, :trimr, :usymlqr)
             x, y, _ = @eval $fn($A, $b, $c)
           elseif fn == :gpmr
             x, y, _ = @eval $fn($A, $B, $b, $c)
@@ -33,6 +33,10 @@
           if fn in (:tricg, :trimr)
             @test norm(x + A * y - b) ≤ Κ * (atol + norm([b; c]) * rtol)
             @test norm(A' * x - y - c) ≤ Κ * (atol + norm([b; c]) * rtol)
+            @test eltype(y) == FC
+          if fn == :usymlqr
+            @test norm(x + A * y - b) ≤ Κ * (atol + norm([b; c]) * rtol)
+            @test norm(A' * x - c) ≤ Κ * (atol + norm([b; c]) * rtol)
             @test eltype(y) == FC
           elseif fn == :gpmr
             @test norm(x + A * y - b) ≤ Κ * (atol + norm([b; c]) * rtol)

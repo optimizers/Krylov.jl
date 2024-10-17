@@ -68,6 +68,18 @@ function test_warm_start(FC)
   resid = norm(r) / norm([b; b])
   @test(resid ≤ tol)
 
+  # USYMLQR
+  x, y, stats = usymlqr(A, b, b, x0, y0)
+  r = [b - x - A * y; b - A' * x]
+  resid = norm(r) / norm([b; b])
+  @test(resid ≤ tol)
+
+  solver = UsymlqrSolver(A, b)
+  solve!(solver, A, b, b, x0, y0)
+  r = [b - solver.x - A * solver.y; b - A' * solver.x]
+  resid = norm(r) / norm([b; b])
+  @test(resid ≤ tol)
+
   # GPMR
   x, y, stats = gpmr(A, A', b, b, x0, y0)
   r = [b - x - A * y; b - A' * x - y]

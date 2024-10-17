@@ -294,7 +294,7 @@ T_{k,k+1} =
 
 The function [`saunders_simon_yip`](@ref saunders_simon_yip(::Any, ::AbstractVector{FC}, ::AbstractVector{FC}, ::Int) where FC <: (Union{Complex{T}, T} where T <: AbstractFloat)) returns $V_{k+1}$, $\beta_1$, $T_{k+1,k}$, $U_{k+1}$, $\bar{\gamma}_1$ and $T_{k,k+1}^H$.
 
-Related methods: [`USYMLQ`](@ref usymlq), [`USYMQR`](@ref usymqr), [`TriLQR`](@ref trilqr), [`TriCG`](@ref tricg) and [`TriMR`](@ref trimr).
+Related methods: [`USYMLQ`](@ref usymlq), [`USYMQR`](@ref usymqr), [`USYMLQR`](@ref usymlqr), [`TriLQR`](@ref trilqr), [`TriCG`](@ref tricg) and [`TriMR`](@ref trimr).
 
 !!! note
     The Saunders-Simon-Yip is equivalent to the block-Lanczos process applied to $\begin{bmatrix} 0 & A \\ A^H & 0 \end{bmatrix}$ with initial matrix $\begin{bmatrix} b & 0 \\ 0 & c \end{bmatrix}$.

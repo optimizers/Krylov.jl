@@ -3,7 +3,7 @@ CgLanczosShiftSolver, MinresQlpSolver, DqgmresSolver, DiomSolver, UsymlqSolver,
 UsymqrSolver, TricgSolver, TrimrSolver, TrilqrSolver, CgsSolver, BicgstabSolver,
 BilqSolver, QmrSolver, BilqrSolver, CglsSolver, CglsLanczosShiftSolver, CrlsSolver, CgneSolver,
 CrmrSolver, LslqSolver, LsqrSolver, LsmrSolver, LnlqSolver, CraigSolver, CraigmrSolver,
-GmresSolver, FomSolver, GpmrSolver, FgmresSolver, CarSolver, MinaresSolver
+GmresSolver, FomSolver, GpmrSolver, UsymlqrSolver, FgmresSolver, CarSolver, MinaresSolver
 
 export solve!, solution, nsolution, statistics, issolved, issolved_primal, issolved_dual,
 niterations, Aprod, Atprod, Bprod, warm_start!
@@ -45,6 +45,7 @@ const KRYLOV_SOLVERS = Dict(
   :lnlq       => :LnlqSolver     ,
   :craig      => :CraigSolver    ,
   :craigmr    => :CraigmrSolver  ,
+  :usymlqr    => :UsymlqrSolver  ,
   :cg_lanczos_shift   => :CgLanczosShiftSolver  ,
   :cgls_lanczos_shift => :CglsLanczosShiftSolver,
 )
@@ -53,14 +54,14 @@ const KRYLOV_SOLVERS = Dict(
 abstract type KrylovSolver{T,FC,S} end
 
 """
-Type for storing the vectors required by the in-place version of MINRES.
+Workspace for the in-place version of MINRES.
 
-The outer constructors
+The outer constructors:
 
     solver = MinresSolver(m, n, S; window :: Int=5)
     solver = MinresSolver(A, b; window :: Int=5)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct MinresSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -102,14 +103,14 @@ function MinresSolver(A, b; window :: Int=5)
 end
 
 """
-Type for storing the vectors required by the in-place version of MINARES.
+Workspace for the in-place version of MINARES.
 
-The outer constructors
+The outer constructors:
 
     solver = MinaresSolver(m, n, S)
     solver = MinaresSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct MinaresSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -151,14 +152,14 @@ function MinaresSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CG.
+Workspace for the in-place version of CG.
 
-The outer constructors
+The outer constructors:
 
     solver = CgSolver(m, n, S)
     solver = CgSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CgSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -194,14 +195,14 @@ function CgSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CR.
+Workspace for the in-place version of CR.
 
-The outer constructors
+The outer constructors:
 
     solver = CrSolver(m, n, S)
     solver = CrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -239,14 +240,14 @@ function CrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CAR.
+Workspace for the in-place version of CAR.
 
-The outer constructors
+The outer constructors:
 
     solver = CarSolver(m, n, S)
     solver = CarSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CarSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -288,14 +289,14 @@ function CarSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of SYMMLQ.
+Workspace for the in-place version of SYMMLQ.
 
-The outer constructors
+The outer constructors:
 
     solver = SymmlqSolver(m, n, S)
     solver = SymmlqSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct SymmlqSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -339,14 +340,14 @@ function SymmlqSolver(A, b; window :: Int=5)
 end
 
 """
-Type for storing the vectors required by the in-place version of CG-LANCZOS.
+Workspace for the in-place version of CG-LANCZOS.
 
-The outer constructors
+The outer constructors:
 
     solver = CgLanczosSolver(m, n, S)
     solver = CgLanczosSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CgLanczosSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -384,14 +385,14 @@ function CgLanczosSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CG-LANCZOS-SHIFT.
+Workspace for the in-place version of CG-LANCZOS-SHIFT.
 
-The outer constructors
+The outer constructors:
 
     solver = CgLanczosShiftSolver(m, n, nshifts, S)
     solver = CgLanczosShiftSolver(A, b, nshifts)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CgLanczosShiftSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -442,14 +443,14 @@ function CgLanczosShiftSolver(A, b, nshifts)
 end
 
 """
-Type for storing the vectors required by the in-place version of MINRES-QLP.
+Workspace for the in-place version of MINRES-QLP.
 
-The outer constructors
+The outer constructors:
 
     solver = MinresQlpSolver(m, n, S)
     solver = MinresQlpSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct MinresQlpSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -489,14 +490,14 @@ function MinresQlpSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of DQGMRES.
+Workspace for the in-place version of DQGMRES.
 
-The outer constructors
+The outer constructors:
 
     solver = DqgmresSolver(m, n, memory, S)
     solver = DqgmresSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n` if the value given is larger than `n`.
 `memory` is an optional argument in the second constructor.
 """
@@ -543,14 +544,14 @@ function DqgmresSolver(A, b, memory = 20)
 end
 
 """
-Type for storing the vectors required by the in-place version of DIOM.
+Workspace for the in-place version of DIOM.
 
-The outer constructors
+The outer constructors:
 
     solver = DiomSolver(m, n, memory, S)
     solver = DiomSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n` if the value given is larger than `n`.
 `memory` is an optional argument in the second constructor.
 """
@@ -595,14 +596,14 @@ function DiomSolver(A, b, memory = 20)
 end
 
 """
-Type for storing the vectors required by the in-place version of USYMLQ.
+Workspace for the in-place version of USYMLQ.
 
-The outer constructors
+The outer constructors:
 
     solver = UsymlqSolver(m, n, S)
     solver = UsymlqSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct UsymlqSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -644,14 +645,14 @@ function UsymlqSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of USYMQR.
+Workspace for the in-place version of USYMQR.
 
-The outer constructors
+The outer constructors:
 
     solver = UsymqrSolver(m, n, S)
     solver = UsymqrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct UsymqrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -695,14 +696,14 @@ function UsymqrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of TRICG.
+Workspace for the in-place version of TRICG.
 
-The outer constructors
+The outer constructors:
 
     solver = TricgSolver(m, n, S)
     solver = TricgSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct TricgSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -758,14 +759,14 @@ function TricgSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of TRIMR.
+Workspace for the in-place version of TRIMR.
 
-The outer constructors
+The outer constructors:
 
     solver = TrimrSolver(m, n, S)
     solver = TrimrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct TrimrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -829,14 +830,14 @@ function TrimrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of TRILQR.
+Workspace for the in-place version of TRILQR.
 
-The outer constructors
+The outer constructors:
 
     solver = TrilqrSolver(m, n, S)
     solver = TrilqrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct TrilqrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -886,14 +887,14 @@ function TrilqrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CGS.
+Workspace for the in-place version of CGS.
 
-The outer constructorss
+The outer constructors:s
 
     solver = CgsSolver(m, n, S)
     solver = CgsSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CgsSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -935,14 +936,14 @@ function CgsSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of BICGSTAB.
+Workspace for the in-place version of BICGSTAB.
 
-The outer constructors
+The outer constructors:
 
     solver = BicgstabSolver(m, n, S)
     solver = BicgstabSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct BicgstabSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -984,14 +985,14 @@ function BicgstabSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of BILQ.
+Workspace for the in-place version of BILQ.
 
-The outer constructors
+The outer constructors:
 
     solver = BilqSolver(m, n, S)
     solver = BilqSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct BilqSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -1037,14 +1038,14 @@ function BilqSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of QMR.
+Workspace for the in-place version of QMR.
 
-The outer constructors
+The outer constructors:
 
     solver = QmrSolver(m, n, S)
     solver = QmrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct QmrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -1092,14 +1093,14 @@ function QmrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of BILQR.
+Workspace for the in-place version of BILQR.
 
-The outer constructors
+The outer constructors:
 
     solver = BilqrSolver(m, n, S)
     solver = BilqrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct BilqrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m          :: Int
@@ -1149,14 +1150,14 @@ function BilqrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CGLS.
+Workspace for the in-place version of CGLS.
 
-The outer constructors
+The outer constructors:
 
     solver = CglsSolver(m, n, S)
     solver = CglsSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CglsSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1251,14 +1252,14 @@ function CglsLanczosShiftSolver(A, b, nshifts)
 end
 
 """
-Type for storing the vectors required by the in-place version of CRLS.
+Workspace for the in-place version of CRLS.
 
-The outer constructors
+The outer constructors:
 
     solver = CrlsSolver(m, n, S)
     solver = CrlsSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CrlsSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1297,14 +1298,14 @@ function CrlsSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CGNE.
+Workspace for the in-place version of CGNE.
 
-The outer constructors
+The outer constructors:
 
     solver = CgneSolver(m, n, S)
     solver = CgneSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CgneSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1341,14 +1342,14 @@ function CgneSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CRMR.
+Workspace for the in-place version of CRMR.
 
-The outer constructors
+The outer constructors:
 
     solver = CrmrSolver(m, n, S)
     solver = CrmrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CrmrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1385,14 +1386,14 @@ function CrmrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of LSLQ.
+Workspace for the in-place version of LSLQ.
 
-The outer constructors
+The outer constructors:
 
     solver = LslqSolver(m, n, S)
     solver = LslqSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct LslqSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m       :: Int
@@ -1433,14 +1434,14 @@ function LslqSolver(A, b; window :: Int=5)
 end
 
 """
-Type for storing the vectors required by the in-place version of LSQR.
+Workspace for the in-place version of LSQR.
 
-The outer constructors
+The outer constructors:
 
     solver = LsqrSolver(m, n, S)
     solver = LsqrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct LsqrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m       :: Int
@@ -1481,14 +1482,14 @@ function LsqrSolver(A, b; window :: Int=5)
 end
 
 """
-Type for storing the vectors required by the in-place version of LSMR.
+Workspace for the in-place version of LSMR.
 
-The outer constructors
+The outer constructors:
 
     solver = LsmrSolver(m, n, S)
     solver = LsmrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct LsmrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m       :: Int
@@ -1531,14 +1532,14 @@ function LsmrSolver(A, b; window :: Int=5)
 end
 
 """
-Type for storing the vectors required by the in-place version of LNLQ.
+Workspace for the in-place version of LNLQ.
 
-The outer constructors
+The outer constructors:
 
     solver = LnlqSolver(m, n, S)
     solver = LnlqSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct LnlqSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1581,14 +1582,14 @@ function LnlqSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CRAIG.
+Workspace for the in-place version of CRAIG.
 
-The outer constructors
+The outer constructors:
 
     solver = CraigSolver(m, n, S)
     solver = CraigSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CraigSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1631,14 +1632,14 @@ function CraigSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of CRAIGMR.
+Workspace for the in-place version of CRAIGMR.
 
-The outer constructors
+The outer constructors:
 
     solver = CraigmrSolver(m, n, S)
     solver = CraigmrSolver(A, b)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 """
 mutable struct CraigmrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
   m     :: Int
@@ -1685,14 +1686,14 @@ function CraigmrSolver(A, b)
 end
 
 """
-Type for storing the vectors required by the in-place version of GMRES.
+Workspace for the in-place version of GMRES.
 
-The outer constructors
+The outer constructors:
 
     solver = GmresSolver(m, n, memory, S)
     solver = GmresSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n` if the value given is larger than `n`.
 `memory` is an optional argument in the second constructor.
 """
@@ -1740,14 +1741,14 @@ function GmresSolver(A, b, memory = 20)
 end
 
 """
-Type for storing the vectors required by the in-place version of FGMRES.
+Workspace for the in-place version of FGMRES.
 
-The outer constructors
+The outer constructors:
 
     solver = FgmresSolver(m, n, memory, S)
     solver = FgmresSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n` if the value given is larger than `n`.
 `memory` is an optional argument in the second constructor.
 """
@@ -1795,14 +1796,14 @@ function FgmresSolver(A, b, memory = 20)
 end
 
 """
-Type for storing the vectors required by the in-place version of FOM.
+Workspace for the in-place version of FOM.
 
-The outer constructors
+The outer constructors:
 
     solver = FomSolver(m, n, memory, S)
     solver = FomSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n` if the value given is larger than `n`.
 `memory` is an optional argument in the second constructor.
 """
@@ -1847,14 +1848,14 @@ function FomSolver(A, b, memory = 20)
 end
 
 """
-Type for storing the vectors required by the in-place version of GPMR.
+Workspace for the in-place version of GPMR.
 
-The outer constructors
+The outer constructors:
 
     solver = GpmrSolver(m, n, memory, S)
     solver = GpmrSolver(A, b, memory = 20)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `n + m` if the value given is larger than `n + m`.
 `memory` is an optional argument in the second constructor.
 """
@@ -1910,6 +1911,71 @@ function GpmrSolver(A, b, memory = 20)
   m, n = size(A)
   S = ktypeof(b)
   GpmrSolver(m, n, memory, S)
+end
+
+"""
+Workspace for the in-place version of USYMLQR.
+
+The outer constructors:
+
+    solver = UsymlqrSolver(m, n, S)
+    solver = UsymlqrSolver(A, b)
+
+can be used to initialize this workspace.
+"""
+mutable struct UsymlqrSolver{T,FC,S} <: KrylovSolver{T,FC,S}
+  m          :: Int
+  n          :: Int
+  r          :: S
+  x          :: S
+  y          :: S
+  z          :: S
+  M⁻¹uₖ₋₁    :: S
+  M⁻¹uₖ      :: S
+  N⁻¹vₖ₋₁    :: S
+  N⁻¹vₖ      :: S
+  p          :: S
+  q          :: S
+  d̅          :: S
+  wₖ₋₂       :: S
+  wₖ₋₁       :: S
+  Δx         :: S
+  Δy         :: S
+  uₖ         :: S
+  vₖ         :: S
+  warm_start :: Bool
+  stats      :: SimpleStats{T}
+end
+
+function UsymlqrSolver(m, n, S)
+  FC      = eltype(S)
+  T       = real(FC)
+  r       = S(undef, m)
+  x       = S(undef, n)
+  y       = S(undef, m)
+  z       = S(undef, n)
+  M⁻¹uₖ₋₁ = S(undef, m)
+  M⁻¹uₖ   = S(undef, m)
+  N⁻¹vₖ₋₁ = S(undef, n)
+  N⁻¹vₖ   = S(undef, n)
+  q       = S(undef, m)
+  p       = S(undef, n)
+  d̅       = S(undef, m)
+  wₖ₋₂    = S(undef, n)
+  wₖ₋₁    = S(undef, n)
+  Δx      = S(undef, 0)
+  Δy      = S(undef, 0)
+  uₖ      = S(undef, 0)
+  vₖ      = S(undef, 0)
+  stats = SimpleStats(0, false, false, T[], T[], T[], 0.0, "unknown")
+  solver = UsymlqrSolver{T,FC,S}(m, n, r, x, y, z, M⁻¹uₖ₋₁, M⁻¹uₖ, N⁻¹vₖ₋₁, N⁻¹vₖ, q, p, d̅, wₖ₋₂, wₖ₋₁, Δx, Δy, uₖ, vₖ, false, stats)
+  return solver
+end
+
+function UsymlqrSolver(A, b)
+  m, n = size(A)
+  S = ktypeof(b)
+  UsymlqrSolver(m, n, S)
 end
 
 """
@@ -2013,6 +2079,7 @@ for (KS, fun, nsol, nA, nAt, warm_start) in [
   (:FgmresSolver   , :fgmres!    , 1, 1, 0, true )
   (:FomSolver      , :fom!       , 1, 1, 0, true )
   (:GpmrSolver     , :gpmr!      , 2, 1, 0, true )
+  (:UsymlqrSolver  , :usymlqr!   , 2, 1, 1, true )
   (:CgLanczosShiftSolver  , :cg_lanczos_shift!  , 1, 1, 0, false)
   (:CglsLanczosShiftSolver, :cgls_lanczos_shift!, 1, 1, 1, false)
 ]
@@ -2044,7 +2111,7 @@ for (KS, fun, nsol, nA, nAt, warm_start) in [
       issolved(solver :: $KS) = solver.stats.solved
     end
     if $warm_start
-      if $KS in (BilqrSolver, TrilqrSolver, TricgSolver, TrimrSolver, GpmrSolver)
+      if $KS in (BilqrSolver, TrilqrSolver, UsymlqrSolver, TricgSolver, TrimrSolver, GpmrSolver)
         function warm_start!(solver :: $KS, x0, y0)
           n = length(solver.x)
           m = length(solver.y)

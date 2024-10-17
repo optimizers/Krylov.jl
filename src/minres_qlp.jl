@@ -279,8 +279,8 @@ kwargs_minres_qlp = (:M, :ldiv, :λ, :atol, :rtol, :Artol, :itmax, :timemax, :ve
       # [sₖ -cₖ] [βₖ₊₁ ]   [0 ]
       (cₖ, sₖ, λₖ) = sym_givens(λbarₖ, βₖ₊₁)
 
-      # Compute [   zₖ  ] = (Qₖ)ᴴβ₁e₁
-      #         [ζbarₖ₊₁]
+      # Compute z̅ₖ₊₁ = [   zₖ  ] = (Qₖ)ᴴβ₁e₁
+      #                [ζbarₖ₊₁]
       #
       # [cₖ  sₖ] [ζbarₖ] = [   ζₖ  ]
       # [sₖ -cₖ] [  0  ]   [ζbarₖ₊₁]
