@@ -118,6 +118,7 @@ kwargs_block_gmres = (:M, :N, :ldiv, :restart, :reorthogonalization, :atol, :rto
     ΔX, X, W, V, Z = solver.ΔX, solver.X, solver.W, solver.V, solver.Z
     C, D, R, H, τ, stats = solver.C, solver.D, solver.R, solver.H, solver.τ, solver.stats
     Ψtmp = C
+    buffer = solver.buffer
     warm_start = solver.warm_start
     RNorms = stats.residuals
     reset!(stats)
@@ -198,9 +199,9 @@ kwargs_block_gmres = (:M, :N, :ldiv, :restart, :reorthogonalization, :atol, :rto
       # Initial Γ and V₁
       copyto!(V[1], R₀)
       if C isa Matrix
-        householder!(V[1], Z[1], τ[1])
+        householder!(V[1], Z[1], τ[1], buffer)
       else
-        householder!(V[1], Z[1], τ[1], solver.tmp)
+        householder!(V[1], Z[1], τ[1], buffer, solver.tmp)
       end
 
       npass = npass + 1
@@ -242,9 +243,9 @@ kwargs_block_gmres = (:M, :N, :ldiv, :restart, :reorthogonalization, :atol, :rto
 
         # Vₖ₊₁ and Ψₖ₊₁.ₖ are stored in Q and C.
         if C isa Matrix
-          householder!(Q, C, τ[inner_iter])
+          householder!(Q, C, τ[inner_iter], buffer)
         else
-          householder!(Q, C, τ[inner_iter], solver.tmp)
+          householder!(Q, C, τ[inner_iter], buffer, solver.tmp)
         end
 
         # Update the QR factorization of Hₖ₊₁.ₖ.
@@ -252,7 +253,7 @@ kwargs_block_gmres = (:M, :N, :ldiv, :restart, :reorthogonalization, :atol, :rto
         for i = 1 : inner_iter-1
           D1 .= R[nr+i]
           D2 .= R[nr+i+1]
-          kormqr!('L', trans, H[i], τ[i], D)
+          kormqr!('L', trans, H[i], τ[i], D, buffer)
           R[nr+i] .= D1
           R[nr+i+1] .= D2
         end
@@ -261,15 +262,15 @@ kwargs_block_gmres = (:M, :N, :ldiv, :restart, :reorthogonalization, :atol, :rto
         H[inner_iter][1:p,:] .= R[nr+inner_iter]
         H[inner_iter][p+1:2p,:] .= C
         if C isa Matrix
-          householder!(H[inner_iter], R[nr+inner_iter], τ[inner_iter], compact=true)
+          householder!(H[inner_iter], R[nr+inner_iter], τ[inner_iter], buffer, compact=true)
         else
-          householder!(H[inner_iter], R[nr+inner_iter], τ[inner_iter], solver.tmp, compact=true)
+          householder!(H[inner_iter], R[nr+inner_iter], τ[inner_iter], buffer, solver.tmp, compact=true)
         end
 
         # Update Zₖ = (Qₖ)ᴴΓE₁ = (Λ₁, ..., Λₖ, Λbarₖ₊₁)
         D1 .= Z[inner_iter]
         D2 .= zero(FC)
-        kormqr!('L', trans, H[inner_iter], τ[inner_iter], D)
+        kormqr!('L', trans, H[inner_iter], τ[inner_iter], D, buffer)
         Z[inner_iter] .= D1
 
         # Update residual norm estimate.

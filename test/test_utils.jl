@@ -1,3 +1,5 @@
+using Krylov
+
 include("get_div_grad.jl")
 include("gen_lsq.jl")
 include("check_min_norm.jl")

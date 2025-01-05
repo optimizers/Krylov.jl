@@ -104,6 +104,8 @@ mutable struct BlockGmresSolver{T,FC,SV,SM} <: BlockKrylovSolver{T,FC,SV,SM}
   H          :: Vector{SM}
   τ          :: Vector{SV}
   tmp        :: SM
+  size_buffer:: Vector{Int}
+  buffer     :: SV
   warm_start :: Bool
   stats      :: SimpleStats{T}
 end
@@ -125,8 +127,11 @@ function BlockGmresSolver(m, n, p, memory, SV, SM)
   H  = SM[SM(undef, 2p, p) for i = 1 : memory]
   τ  = SV[SV(undef, p) for i = 1 : memory]
   tmp = C isa Matrix ? SM(undef, 0, 0) : SM(undef, p, p)
+  trans = FC <: AbstractFloat ? 'T' : 'C'
+  size_buffer = Int[kgeqrf_buffer!(V[1], τ[1]), korgqr_buffer!(V[1], τ[1]), kgeqrf_buffer!(H[1], τ[1]), korgqr_buffer!(H[1], τ[1]), kormqr_buffer!('L', trans, H[1], τ[1], D)]
+  buffer = C isa Matrix ? SV(undef, 0) : SV(undef, size_buffer |> maximum)
   stats = SimpleStats(0, false, false, T[], T[], T[], 0.0, "unknown")
-  solver = BlockGmresSolver{T,FC,SV,SM}(m, n, p, ΔX, X, W, P, Q, C, D, V, Z, R, H, τ, tmp, false, stats)
+  solver = BlockGmresSolver{T,FC,SV,SM}(m, n, p, ΔX, X, W, P, Q, C, D, V, Z, R, H, τ, tmp, size_buffer, buffer, false, stats)
   return solver
 end
 
