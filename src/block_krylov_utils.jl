@@ -1,3 +1,7 @@
+import LinearAlgebra.BLAS.BlasInt
+import LinearAlgebra.BLAS.@blasfunc
+import LinearAlgebra.LAPACK.liblapack
+
 # """
 #     Q, R = gs(A)
 #
@@ -187,22 +191,12 @@ end
 # Output :
 # Q an n-by-k orthonormal matrix: QᴴQ = Iₖ
 # R an k-by-k upper triangular matrix: QR = A
-function householder(A::AbstractMatrix{FC}; compact::Bool=false) where FC <: FloatOrComplex
+function householder(A::Matrix{FC}; compact::Bool=false) where FC <: FloatOrComplex
   n, k = size(A)
   Q = copy(A)
   τ = zeros(FC, k)
   R = zeros(FC, k, k)
   householder!(Q, R, τ; compact)
-end
-
-function householder!(Q::AbstractMatrix{FC}, R::AbstractMatrix{FC}, τ::AbstractVector{FC}, tmp::AbstractMatrix{FC}; compact::Bool=false) where FC <: FloatOrComplex
-  n, k = size(Q)
-  kfill!(R, zero(FC))
-  kgeqrf!(Q, τ)
-  copyto!(tmp, view(Q, 1:k, 1:k))
-  copy_triangle(tmp, R, k)
-  !compact && korgqr!(Q, τ)
-  return Q, R
 end
 
 function householder!(Q::AbstractMatrix{FC}, R::AbstractMatrix{FC}, τ::AbstractVector{FC}; compact::Bool=false) where FC <: FloatOrComplex
@@ -213,3 +207,120 @@ function householder!(Q::AbstractMatrix{FC}, R::AbstractMatrix{FC}, τ::Abstract
   !compact && korgqr!(Q, τ)
   return Q, R
 end
+
+function householder!(Q::AbstractMatrix{FC}, R::AbstractMatrix{FC}, τ::AbstractVector{FC}, buffer::AbstractVector{FC}; compact::Bool=false) where FC <: FloatOrComplex
+  n, k = size(Q)
+  kfill!(R, zero(FC))
+  kgeqrf!(Q, τ, buffer)
+  copy_triangle(Q, R, k)
+  !compact && korgqr!(Q, τ, buffer)
+  return Q, R
+end
+
+function householder!(Q::AbstractMatrix{FC}, R::AbstractMatrix{FC}, τ::AbstractVector{FC}, buffer::AbstractVector{FC}, tmp::AbstractMatrix{FC}; compact::Bool=false) where FC <: FloatOrComplex
+  n, k = size(Q)
+  kfill!(R, zero(FC))
+  kgeqrf!(Q, τ, buffer)
+  copyto!(tmp, view(Q, 1:k, 1:k))
+  copy_triangle(tmp, R, k)
+  !compact && korgqr!(Q, τ, buffer)
+  return Q, R
+end
+
+for (Xgeqrf, Xorgqr, Xormqr, T) in ((:sgeqrf_, :sorgqr_, :sormqr_, :Float32),
+                                    (:dgeqrf_, :dorgqr_, :dormqr_, :Float64),
+                                    (:cgeqrf_, :cungqr_, :cunmqr_, :ComplexF32),
+                                    (:zgeqrf_, :zungqr_, :zunmqr_, :ComplexF64))
+    @eval begin
+        function kgeqrf_buffer!(A::Matrix{$T}, tau::Vector{$T})
+            symb = @blasfunc($Xgeqrf)
+            m, n = size(A)
+            work  = Ref{$T}(0)
+            lwork = Ref{BlasInt}(-1)
+            info  = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            @ccall liblapack.dgeqrf_64_(m::Ref{BlasInt}, n::Ref{BlasInt}, A::Ptr{$T},
+                                        lda::Ref{BlasInt}, tau::Ptr{$T}, work::Ptr{$T},
+                                        lwork::Ref{BlasInt}, info::Ptr{BlasInt})::Cvoid
+            return work[] |> Int
+        end
+
+        function kgeqrf!(A::Matrix{$T}, tau::Vector{$T}, work::Vector{$T})
+            symb = @blasfunc($Xgeqrf)
+            m, n = size(A)
+            lwork = Ref{BlasInt}(length(work))
+            info  = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            @ccall liblapack.dgeqrf_64_(m::Ref{BlasInt}, n::Ref{BlasInt}, A::Ptr{$T},
+                                        lda::Ref{BlasInt}, tau::Ptr{$T}, work::Ptr{$T},
+                                        lwork::Ref{BlasInt}, info::Ptr{BlasInt})::Cvoid
+            return nothing
+        end
+
+        function korgqr_buffer!(A::Matrix{$T}, tau::Vector{$T})
+            symb = @blasfunc($Xorgqr)
+            m, n = size(A)
+            k = length(tau)
+            work  = Ref{$T}(0)
+            lwork = Ref{BlasInt}(-1)
+            info  = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            info  = Ref{BlasInt}()
+            @ccall liblapack.dorgqr_64_(m::Ref{BlasInt}, n::Ref{BlasInt}, k::Ref{BlasInt},
+                                        A::Ptr{$T}, lda::Ref{BlasInt}, tau::Ptr{$T}, work::Ptr{$T},
+                                        lwork::Ref{BlasInt}, info::Ptr{BlasInt})::Cvoid
+            return work[] |> Int
+        end
+
+        function korgqr!(A::Matrix{$T}, tau::Vector{$T}, work::Vector{$T})
+            symb = @blasfunc($Xorgqr)
+            m, n = size(A)
+            k = length(tau)
+            lwork = Ref{BlasInt}(length(work))
+            info  = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            info  = Ref{BlasInt}()
+            @ccall liblapack.dorgqr_64_(m::Ref{BlasInt}, n::Ref{BlasInt}, k::Ref{BlasInt},
+                                        A::Ptr{$T}, lda::Ref{BlasInt}, tau::Ptr{$T}, work::Ptr{$T},
+                                        lwork::Ref{BlasInt}, info::Ptr{BlasInt})::Cvoid
+            return nothing
+        end
+
+        function kormqr_buffer!(side::Char, trans::Char, A::Matrix{$T}, tau::Vector{$T}, C::Matrix{$T})
+            symb = @blasfunc($Xormqr)
+            m, n = size(A)
+            k = length(tau)
+            work = Ref{$T}(0)
+            lwork = Ref{BlasInt}(-1)
+            info = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            ldc = max(1, stride(C,2))
+            @ccall liblapack.dormqr_64_(side::Ref{UInt8}, trans::Ref{UInt8}, m::Ref{BlasInt},
+                                        n::Ref{BlasInt}, k::Ref{BlasInt}, A::Ptr{$T},
+                                        lda::Ref{BlasInt}, tau::Ptr{$T}, C::Ptr{$T},
+                                        ldc::Ref{BlasInt}, work::Ptr{$T}, lwork::Ref{BlasInt},
+                                        info::Ref{BlasInt}, 1::Clong, 1::Clong)::Cvoid
+            return work[] |> BlasInt
+        end
+
+        function kormqr!(side::Char, trans::Char, A::Matrix{$T}, tau::Vector{$T}, C::Matrix{$T}, work::Vector{$T})
+            symb = @blasfunc($Xormqr)
+            m, n = size(A)
+            k = length(tau)
+            lwork = Ref{BlasInt}(length(work))
+            info = Ref{BlasInt}()
+            lda = max(1, stride(A,2))
+            ldc = max(1, stride(C,2))
+            @ccall liblapack.dormqr_64_(side::Ref{UInt8}, trans::Ref{UInt8}, m::Ref{BlasInt},
+                                        n::Ref{BlasInt}, k::Ref{BlasInt}, A::Ptr{$T},
+                                        lda::Ref{BlasInt}, tau::Ptr{$T}, C::Ptr{$T},
+                                        ldc::Ref{BlasInt}, work::Ptr{$T}, lwork::Ref{BlasInt},
+                                        info::Ref{BlasInt}, 1::Clong, 1::Clong)::Cvoid
+            return nothing
+        end
+    end
+end
+
+kgeqrf!(A :: AbstractMatrix{T}, tau :: AbstractVector{T}, buffer:: AbstractVector{T}) where T <: BLAS.BlasFloat = LAPACK.geqrf!(A, tau)
+korgqr!(A :: AbstractMatrix{T}, tau :: AbstractVector{T}, buffer:: AbstractVector{T}) where T <: BLAS.BlasFloat = LAPACK.orgqr!(A, tau)
+kormqr!(side :: Char, trans :: Char, A :: AbstractMatrix{T}, tau :: AbstractVector{T}, C :: AbstractMatrix{T}, buffer:: AbstractVector{T}) where T <: BLAS.BlasFloat = LAPACK.ormqr!(side, trans, A, tau, C)

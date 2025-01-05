@@ -5,11 +5,13 @@
 
       A   = FC.(get_div_grad(18, 18, 18))  # Dimension m x n
       m,n = size(A)
+      p   = 5
       k   = div(n, 2)
       Au  = A[1:k,:]          # Dimension k x n
       Ao  = A[:,1:k]          # Dimension m x k
       b   = Ao * ones(FC, k)  # Dimension m
       c   = Au * ones(FC, n)  # Dimension k
+      B   = A * Matrix{FC}(I, m, p)  # Dimension m × p
       mem = 200
 
       T = real(FC)
@@ -636,6 +638,58 @@
         inplace_gpmr_bytes = @allocated gpmr!(solver, Ao, Au, b, c)
         @test inplace_gpmr_bytes == 0
       end
+
+      @testset "BLOCK-GMRES" begin
+        # BLOCK-GMRES needs:
+        # - 2 (n*p)-matrices: X, W
+        # - 1 (p*p)-matrix: C
+        # - 1 (2p*p)-matrix: D
+        # - mem p-vectors: τ
+        # - mem (n*p)-matrices: V
+        # - mem (p*p)-matrices: Z
+        # - mem*(mem+1)/2 (p*p)-matrices: R
+        # - mem (2p*p)-matrices: H
+        function storage_block_gmres_bytes(mem, n, p)
+          res = (2*n*p + p*p + 2p*p + mem*p + mem*n*p + mem*p*p + mem*(mem+1)*p*p/2 + mem*2p*p)
+          return nbits_FC * res
+        end
+
+        expected_block_gmres_bytes = storage_block_gmres_bytes(mem, n, p)
+        block_gmres(A, B, memory=mem, itmax=mem)  # warmup
+        actual_block_gmres_bytes = @allocated block_gmres(A, B, memory=mem, itmax=mem)
+        @test expected_block_gmres_bytes ≤ actual_block_gmres_bytes ≤ 1.02 * expected_block_gmres_bytes
+
+        solver = BlockGmresSolver(A, B, mem)
+        block_gmres!(solver, A, B)  # warmup
+        inplace_block_gmres_bytes = @allocated block_gmres!(solver, A, B)
+        @test inplace_block_gmres_bytes == 0
+      end
+
+      # @testset "BLOCK-MINRES" begin
+      #   # BLOCK-MINRES needs:
+      #   # - 2 (n*p)-matrices: X, W
+      #   # - 1 (p*p)-matrix: C
+      #   # - 1 (2p*p)-matrix: D
+      #   # - mem p-vectors: τ
+      #   # - mem (n*p)-matrices: V
+      #   # - mem (p*p)-matrices: Z
+      #   # - mem*(mem+1)/2 (p*p)-matrices: R
+      #   # - mem (2p*p)-matrices: H
+      #   function storage_block_minres_bytes(mem, n, p)
+      #     res = (2*n*p + p*p + 2p*p + mem*p + mem*n*p + mem*p*p + mem*(mem+1)*p*p/2 + mem*2p*p)
+      #     return nbits_FC * res
+      #   end
+
+      #   expected_block_minres_bytes = storage_block_minres_bytes(mem, n, p)
+      #   block_minres(A, B)  # warmup
+      #   actual_block_minres_bytes = @allocated block_minres(A, B)
+      #   @test expected_block_minres_bytes ≤ actual_block_minres_bytes ≤ 1.02 * expected_block_minres_bytes
+
+      #   solver = BlockGmresSolver(A, B, mem)
+      #   block_minres!(solver, A, B)  # warmup
+      #   inplace_block_minres_bytes = @allocated block_minres!(solver, A, B)
+      #   @test inplace_block_minres_bytes == 0
+      # end
     end
   end
 end
