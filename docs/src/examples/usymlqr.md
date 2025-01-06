@@ -16,7 +16,7 @@ c = -b
 # [D   A] [x] = [b]
 # [Aᴴ  0] [y]   [c]
 opH = BlockDiagonalOperator(inv(D), eye(n))
-(x, y, stats) = usymlqr(A, b, c, M=D, ldiv=true)
+(x, y, stats) = usymlqr(A, b, c, M=inv(D))
 K = [D A; A' zeros(n,n)]
 B = [b; c]
 r = B - K * [x; y]

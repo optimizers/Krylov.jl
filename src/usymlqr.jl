@@ -215,8 +215,6 @@ kwargs_usymlqr = (:transfer_to_usymcg, :M, :N, :ldiv, :atol, :rtol, :itmax, :tim
       error("c must be nonzero")
     end
 
-    ε = atol + rtol * rNorm
-    κ = zero(T)
     (verbose > 0) && @printf(iostream, "%4s %7s %7s %7s\n", "k", "αₖ", "βₖ", "γₖ")
     kdisplay(iter, verbose) && @printf(iostream, "%4d %7.1e %7.1e %7.1e\n", iter, αₖ, βₖ, γₖ)
 
@@ -231,10 +229,13 @@ kwargs_usymlqr = (:transfer_to_usymcg, :M, :N, :ldiv, :atol, :rtol, :itmax, :tim
     δbarₖ₋₁ = δbarₖ = zero(FC)   # Coefficients of Rₖ₋₁ and Rₖ modified over the course of two iterations
 
     # Stopping criterion.
-    rNorm_LS = β₁
-    rNorm_LN = γ₁
-    solved_LS = rNorm_LS ≤ ε
-    solved_LN = rNorm_LN ≤ ε
+    rNorm_LS = βₖ
+    rNorm_LN = γₖ
+    ε_LS = atol + rtol * rNorm_LS
+    ε_LN = atol + rtol * rNorm_LN
+    κ = zero(T)
+    solved_LS = rNorm_LS ≤ ε_LS
+    solved_LN = rNorm_LN ≤ ε_LN
     solved = solved_LS && solved_LN
     inconsistent = false
     tired = iter ≥ itmax
@@ -265,15 +266,15 @@ kwargs_usymlqr = (:transfer_to_usymcg, :M, :N, :ldiv, :atol, :rtol, :itmax, :tim
       kaxpy!(n, -conj(αₖ), N⁻¹vₖ, p)   # p ← p - ᾱₖ * N⁻¹vₖ
 
       # Compute vₖ₊₁ and uₖ₊₁
-      MisI || mulorldiv!(uₖ₊₁, M, q, ldiv)  # βₖ₊₁uₖ₊₁ = MAvₖ  - γₖuₖ₋₁ - αₖuₖ
-      NisI || mulorldiv!(vₖ₊₁, N, p, ldiv)  # γₖ₊₁vₖ₊₁ = NAᴴuₖ - βₖvₖ₋₁ - ᾱₖvₖ
+      MisI || mulorldiv!(M⁻¹uₖ, M, q, ldiv)  # βₖ₊₁uₖ₊₁ = MAvₖ  - γₖuₖ₋₁ - αₖuₖ
+      NisI || mulorldiv!(N⁻¹vₖ, N, p, ldiv)  # γₖ₊₁vₖ₊₁ = NAᴴuₖ - βₖvₖ₋₁ - ᾱₖvₖ
 
-      βₖ₊₁ = knorm_elliptic(m, uₖ₊₁, q)  # βₖ₊₁ = ‖uₖ₊₁‖_E
-      γₖ₊₁ = knorm_elliptic(n, vₖ₊₁, p)  # γₖ₊₁ = ‖vₖ₊₁‖_F
+      βₖ₊₁ = knorm_elliptic(m, M⁻¹uₖ, q)  # βₖ₊₁ = ‖uₖ₊₁‖_E
+      γₖ₊₁ = knorm_elliptic(n, N⁻¹vₖ, p)  # γₖ₊₁ = ‖vₖ₊₁‖_F
 
       # Update M⁻¹uₖ₋₁ and N⁻¹vₖ₋₁
-      M⁻¹uₖ₋₁ .= M⁻¹uₖ
-      N⁻¹vₖ₋₁ .= N⁻¹vₖ
+      kcopy!(m, M⁻¹uₖ₋₁, M⁻¹uₖ)
+      kcopy!(n, N⁻¹vₖ₋₁, N⁻¹vₖ)
 
       # Update the QR factorization of Tₖ₊₁.ₖ = Qₖ [ Rₖ ].
       #                                            [ Oᵀ ]
@@ -455,17 +456,15 @@ kwargs_usymlqr = (:transfer_to_usymcg, :M, :N, :ldiv, :atol, :rtol, :itmax, :tim
       # δbarₖ₋₁ = δbarₖ
 
       # Update stopping criterion.
-      ill_cond_lim = one(T) / Acond ≤ ctol
-      ill_cond_mach = one(T) + one(T) / Acond ≤ one(T)
-      ill_cond = ill_cond_mach || ill_cond_lim
-      tired = iter ≥ itmax
-      solved = solved_LS && solved_LN
-
       iter == 1 && (κ = atol + rtol * AᴴrNorm)
       user_requested_exit = callback(solver) :: Bool
-      solved = rNorm ≤ ε
-      solved_lq = rNorm_lq ≤ ε
-      solved_cg = transfer_to_usymcg && (abs(δbarₖ) > eps(T)) && (rNorm_cg ≤ ε)
+      # ill_cond_lim = one(T) / Acond ≤ ctol
+      ill_cond_mach = one(T) + one(T) / Acond ≤ one(T)
+      ill_cond = ill_cond_mach || ill_cond_lim
+      solved = rNorm ≤ ε_LS
+      solved_lq = rNorm_lq ≤ ε_LN
+      solved_cg = transfer_to_usymcg && (abs(δbarₖ) > eps(T)) && (rNorm_cg ≤ ε_LN)
+      solved = solved_LS && solved_LN
       inconsistent = !solved && AᴴrNorm ≤ κ
       tired = iter ≥ itmax
       timer = time_ns() - start_time
