@@ -57,6 +57,7 @@ for (workspace, krylov, args, def_args, optargs, def_optargs, kwargs, def_kwargs
   (:FgmresSolver   , :fgmres    , args_fgmres    , def_args_fgmres    , optargs_fgmres    , def_optargs_fgmres    , kwargs_fgmres    , def_kwargs_fgmres    )
   (:FomSolver      , :fom       , args_fom       , def_args_fom       , optargs_fom       , def_optargs_fom       , kwargs_fom       , def_kwargs_fom       )
   (:GpmrSolver     , :gpmr      , args_gpmr      , def_args_gpmr      , optargs_gpmr      , def_optargs_gpmr      , kwargs_gpmr      , def_kwargs_gpmr      )
+  (:UsymlqrSolver  , :usymlqr   , args_usymlqr   , def_args_usymlqr   , optargs_usymlqr   , def_optargs_usymlqr   , kwargs_usymlqr   , def_kwargs_usymlqr   )
   (:CgLanczosShiftSolver  , :cg_lanczos_shift  , args_cg_lanczos_shift  , def_args_cg_lanczos_shift  , (), (), kwargs_cg_lanczos_shift  , def_kwargs_cg_lanczos_shift  )
   (:CglsLanczosShiftSolver, :cgls_lanczos_shift, args_cgls_lanczos_shift, def_args_cgls_lanczos_shift, (), (), kwargs_cgls_lanczos_shift, def_kwargs_cgls_lanczos_shift)
 ]

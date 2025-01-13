@@ -9,6 +9,7 @@ include("test_stats.jl")
 include("test_block_processes.jl")
 include("test_processes.jl")
 
+include("test_usymlqr.jl")
 include("test_minares.jl")
 include("test_car.jl")
 include("test_fgmres.jl")

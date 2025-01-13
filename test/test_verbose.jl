@@ -15,13 +15,13 @@ function test_verbose(FC)
   for fn in (:cg, :cgls, :usymqr, :cgne, :cgs, :crmr, :cg_lanczos, :dqgmres, :diom, :cr, :gpmr,
              :lslq, :lsqr, :lsmr, :lnlq, :craig, :bicgstab, :craigmr, :crls, :symmlq, :minres,
              :bilq, :minres_qlp, :qmr, :usymlq, :tricg, :trimr, :trilqr, :bilqr, :gmres, :fom,
-             :car, :minares, :fgmres, :cg_lanczos_shift, :cgls_lanczos_shift)
+             :car, :minares, :fgmres, :usymlqr :cg_lanczos_shift, :cgls_lanczos_shift)
 
     @testset "$fn" begin
       io = IOBuffer()
       if fn in (:trilqr, :bilqr)
         @eval $fn($A, $b, $b, verbose=1, iostream=$io)
-      elseif fn in (:tricg, :trimr)
+      elseif fn in (:tricg, :trimr, :usymlqr)
         @eval $fn($Au, $c, $b, verbose=1, iostream=$io)
       elseif fn in (:lnlq, :craig, :craigmr, :cgne, :crmr)
         @eval $fn($Au, $c, verbose=1, iostream=$io)

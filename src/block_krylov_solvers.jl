@@ -9,14 +9,14 @@ const BLOCK_KRYLOV_SOLVERS = Dict(:block_minres => :BlockMinresSolver,
 abstract type BlockKrylovSolver{T,FC,SV,SM} end
 
 """
-Type for storing the vectors required by the in-place version of BLOCK-MINRES.
+Workspace for the in-place version of BLOCK-MINRES.
 
-The outer constructors
+The outer constructors:
 
     solver = BlockMinresSolver(m, n, p, SV, SM)
     solver = BlockMinresSolver(A, B)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `div(n,p)` if the value given is larger than `div(n,p)`.
 """
 mutable struct BlockMinresSolver{T,FC,SV,SM} <: BlockKrylovSolver{T,FC,SV,SM}
@@ -76,14 +76,14 @@ function BlockMinresSolver(A, B)
 end
 
 """
-Type for storing the vectors required by the in-place version of BLOCK-GMRES.
+Workspace for the in-place version of BLOCK-GMRES.
 
-The outer constructors
+The outer constructors:
 
     solver = BlockGmresSolver(m, n, p, memory, SV, SM)
     solver = BlockGmresSolver(A, B, memory = 5)
 
-may be used in order to create these vectors.
+can be used to initialize this workspace.
 `memory` is set to `div(n,p)` if the value given is larger than `div(n,p)`.
 `memory` is an optional argument in the second constructor.
 """

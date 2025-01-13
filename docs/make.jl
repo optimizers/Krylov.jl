@@ -39,6 +39,7 @@ makedocs(
                            "MINARES" => "examples/minares.md",
                            "TriCG" => "examples/tricg.md",
                            "TriMR" => "examples/trimr.md",
+                           "USYMLQR" => "examples/usymlqr.md",
                            "BICGSTAB" => "examples/bicgstab.md",
                            "DQGMRES" => "examples/dqgmres.md",
                            "BLOCK-GMRES" => "examples/block_gmres.md",
