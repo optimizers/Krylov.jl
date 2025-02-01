@@ -227,15 +227,6 @@ function ktypeof(v::S) where S <: AbstractVector
   end
 end
 
-function ktypeof(v::S) where S <: SparseVector
-  T = eltype(S)
-  return Vector{T}
-end
-
-function ktypeof(v::S) where S <: AbstractSparseVector
-  return S.types[2]  # return `CuVector` for a `CuSparseVector`
-end
-
 function ktypeof(v::S) where S <: SubArray
   vp = v.parent
   if isa(vp, DenseMatrix)
