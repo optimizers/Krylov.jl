@@ -10,6 +10,7 @@ makedocs(
                            collapselevel = 1),
   sitename = "Krylov.jl",
   pages = ["Home" => "index.md",
+           "Foundations of Krylov methods" => "foundations_krylov.md",
            "API" => "api.md",
            "Krylov processes" => "processes.md",
            "Block Krylov processes" => "block_processes.md",
